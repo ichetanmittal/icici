@@ -24,6 +24,8 @@ interface PTTDetails {
   maturity_date: string | null;
   importer_id: string;
   exporter_id: string | null;
+  transferred_at: string | null;
+  transferred_by: string | null;
 }
 
 interface UserProfile {
@@ -43,6 +45,7 @@ export default function PTTDetailPage({ params }: { params: Promise<{ id: string
   const [userId, setUserId] = useState<string>('');
   const [pttDetails, setPttDetails] = useState<PTTDetails | null>(null);
   const [importerProfile, setImporterProfile] = useState<UserProfile | null>(null);
+  const [exporterProfile, setExporterProfile] = useState<UserProfile | null>(null);
   const [makerProfile, setMakerProfile] = useState<UserProfile | null>(null);
   const [checkerProfile, setCheckerProfile] = useState<UserProfile | null>(null);
   const [exporters, setExporters] = useState<UserProfile[]>([]);
@@ -92,6 +95,16 @@ export default function PTTDetailPage({ params }: { params: Promise<{ id: string
           .eq('role', 'exporter');
         if (exportersData) {
           setExporters(exportersData);
+        }
+
+        // Fetch exporter profile if PTT has been transferred
+        if (pttData.exporter_id && pttData.transferred_at) {
+          const { data: exporterData } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', pttData.exporter_id)
+            .single();
+          setExporterProfile(exporterData);
         }
 
         // Fetch maker profile if approved
@@ -343,65 +356,26 @@ export default function PTTDetailPage({ params }: { params: Promise<{ id: string
                 </div>
               </div>
             )}
-            {pttDetails.maturity_date && (
+            {pttDetails.transferred_at && (
               <div className="flex items-start">
                 <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 mr-3"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Transferred to Exporter</p>
+                  <p className="text-sm text-gray-500">{formatDate(pttDetails.transferred_at)}</p>
+                  {exporterProfile && (
+                    <p className="text-xs text-gray-400">to {exporterProfile.company_name}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {pttDetails.maturity_date && (
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-gray-600 rounded-full mt-2 mr-3"></div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">Maturity Date</p>
                   <p className="text-sm text-gray-500">{formatDate(pttDetails.maturity_date)}</p>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Party Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Importer Details */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Importer Details</h2>
-          {importerProfile && (
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-gray-500">Company Name</label>
-                <p className="text-lg font-semibold text-gray-900">{importerProfile.company_name}</p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Contact Person</label>
-                <p className="text-base text-gray-900">{importerProfile.contact_person}</p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Phone</label>
-                <p className="text-base text-gray-900">{importerProfile.phone_number}</p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Geography</label>
-                <p className="text-base text-gray-900">{importerProfile.geography || 'N/A'}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Issuing Bank */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Issuing Bank (DBS)</h2>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-gray-500">Bank Name</label>
-              <p className="text-lg font-semibold text-gray-900">{pttDetails.importer_bank}</p>
-            </div>
-            {importerProfile?.bank_account_number && (
-              <>
-                <div>
-                  <label className="text-sm text-gray-500">Account Number</label>
-                  <p className="text-base font-mono text-gray-900">{importerProfile.bank_account_number}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">SWIFT/IFSC Code</label>
-                  <p className="text-base font-mono text-gray-900">{importerProfile.swift_code}</p>
-                </div>
-              </>
             )}
           </div>
         </div>
