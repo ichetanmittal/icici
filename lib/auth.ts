@@ -9,6 +9,9 @@ export interface SignUpData {
   contactPerson: string;
   phoneNumber: string;
   treasuryBalance?: number;
+  geography?: string;
+  creditLimit?: number;
+  bankName?: string;
 }
 
 export interface SignInData {
@@ -18,7 +21,7 @@ export interface SignInData {
 
 export const signUp = async (data: SignUpData) => {
   try {
-    const { email, password, role, companyName, contactPerson, phoneNumber, treasuryBalance } = data;
+    const { email, password, role, companyName, contactPerson, phoneNumber, treasuryBalance, geography, creditLimit, bankName } = data;
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -48,6 +51,18 @@ export const signUp = async (data: SignUpData) => {
       if (treasuryBalance !== undefined) {
         profileData.treasury_balance = treasuryBalance;
         profileData.current_balance = treasuryBalance;
+      }
+
+      if (geography) {
+        profileData.geography = geography;
+      }
+
+      if (creditLimit !== undefined) {
+        profileData.credit_limit = creditLimit;
+      }
+
+      if (bankName) {
+        profileData.bank_name = bankName;
       }
 
       const { error: profileError } = await supabase

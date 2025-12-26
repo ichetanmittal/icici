@@ -34,6 +34,16 @@ export default function DashboardPage() {
         return;
       }
 
+      if (profileData?.role === UserRole.IMPORTER) {
+        router.push('/importer/dashboard');
+        return;
+      }
+
+      if (profileData?.role === UserRole.EXPORTER) {
+        router.push('/exporter/dashboard');
+        return;
+      }
+
       setProfile(profileData);
       setLoading(false);
     };

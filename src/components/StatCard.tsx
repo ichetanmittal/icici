@@ -14,11 +14,11 @@ export default function StatCard({ title, value, subtitle, color }: StatCardProp
   };
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md border border-gray-200">
-      <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>
-      <p className={`text-4xl font-bold ${colorClasses[color]}`}>{value}</p>
+    <div className="rounded-lg bg-white p-5 shadow-md border border-gray-200">
+      <h3 className="text-xs font-medium text-gray-600 mb-1">{title}</h3>
+      <p className={`text-2xl font-bold ${colorClasses[color]}`}>{value}</p>
       {subtitle && (
-        <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+        <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
       )}
     </div>
   );

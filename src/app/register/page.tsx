@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signUp } from '@/lib/auth';
 import { UserRole, isFunderRole } from '@/types/user';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const invitationToken = searchParams.get('invitation');
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,9 +20,46 @@ export default function RegisterPage() {
     contactPerson: '',
     phoneNumber: '',
     treasuryBalance: '',
+    geography: '',
+    creditLimit: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isInvited, setIsInvited] = useState(false);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
+
+  // Fetch invitation details if token is present
+  useEffect(() => {
+    if (invitationToken) {
+      setLoadingInvitation(true);
+      fetch(`/api/invitation/${invitationToken}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            setError(data.error);
+          } else {
+            // Pre-fill form with invitation data
+            setFormData(prev => ({
+              ...prev,
+              role: UserRole.IMPORTER,
+              companyName: data.entityName,
+              contactPerson: data.pocName,
+              email: data.pocEmail,
+              phoneNumber: data.pocPhone,
+              geography: data.geography,
+              creditLimit: data.creditLimit,
+            }));
+            setIsInvited(true);
+          }
+        })
+        .catch(err => {
+          setError('Failed to load invitation details');
+        })
+        .finally(() => {
+          setLoadingInvitation(false);
+        });
+    }
+  }, [invitationToken]);
 
   const roleOptions = [
     { value: UserRole.EXPORTER, label: 'Exporter' },
@@ -75,6 +115,20 @@ export default function RegisterPage() {
         signUpData.treasuryBalance = parseFloat(formData.treasuryBalance);
       }
 
+      // If user registered via invitation, include geography, credit limit, and bank name
+      if (invitationToken && formData.geography) {
+        signUpData.geography = formData.geography;
+      }
+
+      if (invitationToken && formData.creditLimit) {
+        signUpData.creditLimit = parseFloat(formData.creditLimit);
+      }
+
+      if (invitationToken) {
+        // Set bank name as DBS Bank since they sent the invitation
+        signUpData.bankName = 'DBS Bank';
+      }
+
       const { data, error } = await signUp(signUpData);
 
       if (error) {
@@ -84,11 +138,29 @@ export default function RegisterPage() {
       }
 
       if (data?.user) {
+        // If user registered via invitation, mark it as accepted
+        if (invitationToken) {
+          try {
+            await fetch(`/api/invitation/${invitationToken}/accept`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: data.user.id }),
+            });
+          } catch (err) {
+            console.error('Failed to mark invitation as accepted:', err);
+            // Don't block registration if this fails
+          }
+        }
+
         // Redirect to appropriate dashboard based on role
         if (formData.role === UserRole.DBS_BANK_MAKER || formData.role === UserRole.DBS_BANK_CHECKER) {
           router.push('/bank/dashboard');
         } else if (formData.role === UserRole.GIFT_IBU_MAKER || formData.role === UserRole.GIFT_IBU_CHECKER) {
           router.push('/funder/dashboard');
+        } else if (formData.role === UserRole.IMPORTER) {
+          router.push('/importer/dashboard');
+        } else if (formData.role === UserRole.EXPORTER) {
+          router.push('/exporter/dashboard');
         } else {
           router.push('/dashboard');
         }
@@ -107,6 +179,17 @@ export default function RegisterPage() {
       [e.target.name]: e.target.value,
     });
   };
+
+  if (loadingInvitation) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+          <p className="mt-4 text-sm text-gray-600">Loading invitation details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -130,6 +213,19 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {isInvited && (
+            <div className="rounded-md bg-blue-50 p-4 border border-blue-200">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <p className="text-sm text-blue-800 font-medium">
+                  Registering via Invitation - Some fields are pre-filled and cannot be changed
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700">
@@ -141,7 +237,8 @@ export default function RegisterPage() {
                 required
                 value={formData.role}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                disabled={isInvited}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">Select your role</option>
                 {roleOptions.map((option) => (
@@ -164,7 +261,8 @@ export default function RegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                disabled={isInvited}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="you@example.com"
               />
             </div>
@@ -180,7 +278,8 @@ export default function RegisterPage() {
                 required
                 value={formData.companyName}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                disabled={isInvited}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Your company name"
               />
             </div>
@@ -196,7 +295,8 @@ export default function RegisterPage() {
                 required
                 value={formData.contactPerson}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                disabled={isInvited}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="John Doe"
               />
             </div>
@@ -212,7 +312,8 @@ export default function RegisterPage() {
                 required
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                disabled={isInvited}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="+91 9876543210"
               />
             </div>

@@ -11,6 +11,7 @@ const navigation = [
   { name: 'Outstanding PTTs', href: '/bank/ptts' },
   { name: 'Settlements', href: '/bank/settlements' },
   { name: 'Pending Approvals', href: '/bank/approvals' },
+  { name: 'Managing Network', href: '/bank/network' },
   { name: 'Documents', href: '/bank/documents' },
   { name: 'Blacklist', href: '/bank/blacklist' },
 ];
