@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 
 const INCOTERMS = [
   { value: 'FOB', label: 'FOB - Free On Board' },
@@ -12,6 +13,7 @@ const INCOTERMS = [
 
 export default function RequestPTT() {
   const router = useRouter();
+  const [userId, setUserId] = useState<string>('');
   const [formData, setFormData] = useState({
     amount: '',
     currency: 'USD',
@@ -22,6 +24,19 @@ export default function RequestPTT() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      } else {
+        router.push('/login');
+      }
+    };
+    loadUser();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,16 +60,32 @@ export default function RequestPTT() {
     setLoading(true);
 
     try {
-      // TODO: Implement API call to create PTT request
-      console.log('PTT Request:', formData);
+      const response = await fetch('/api/ptt-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          amount: formData.amount,
+          currency: formData.currency,
+          exporterId: formData.exporter || null,
+          exporterBank: formData.exporterBank || null,
+          maturityDays: formData.maturityDays,
+          incoterms: formData.incoterms,
+        }),
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit PTT request');
+      }
 
       // Redirect to dashboard after successful submission
       router.push('/importer/dashboard');
     } catch (err) {
-      setError('Failed to submit PTT request. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to submit PTT request. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,156 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { amount, currency, exporterId, exporterBank, maturityDays, incoterms } = body;
+
+    // Get current user
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Extract user from auth header (you might need to adjust this based on your auth setup)
+    // For now, we'll assume the user ID is passed in the request
+    const { userId } = body;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate required fields
+    if (!amount || !currency || !maturityDays || !incoterms) {
+      return NextResponse.json(
+        { error: 'All required fields must be provided' },
+        { status: 400 }
+      );
+    }
+
+    // Get user profile to determine importer bank
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('bank_name, role')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    // Ensure user is an importer
+    if (userProfile.role !== 'importer') {
+      return NextResponse.json(
+        { error: 'Only importers can request PTTs' },
+        { status: 403 }
+      );
+    }
+
+    // Create PTT request
+    const { data: pttRequest, error: insertError } = await supabase
+      .from('ptt_requests')
+      .insert({
+        amount: parseFloat(amount),
+        currency,
+        maturity_days: parseInt(maturityDays),
+        incoterms,
+        importer_id: userId,
+        exporter_id: exporterId || null,
+        importer_bank: userProfile.bank_name || 'DBS Bank',
+        exporter_bank: exporterBank || null,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error creating PTT request:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to create PTT request' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        message: 'PTT request created successfully',
+        pttRequest,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Error in PTT request creation:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const importerBank = searchParams.get('importerBank');
+
+    let query = supabase
+      .from('ptt_requests')
+      .select(`
+        *,
+        importer:user_profiles!ptt_requests_importer_id_fkey(
+          company_name,
+          contact_person,
+          email,
+          phone_number
+        ),
+        exporter:user_profiles!ptt_requests_exporter_id_fkey(
+          company_name,
+          contact_person,
+          email
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    if (importerBank) {
+      query = query.eq('importer_bank', importerBank);
+    }
+
+    const { data: requests, error } = await query;
+
+    if (error) {
+      console.error('Error fetching PTT requests:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch PTT requests' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ requests });
+  } catch (error) {
+    console.error('Error in GET PTT requests:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
