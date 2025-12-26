@@ -142,12 +142,6 @@ export default function ImporterLayout({
               Request PTT
             </Link>
             <Link
-              href="/importer/transfer-ptt"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
-            >
-              Transfer PTT
-            </Link>
-            <Link
               href="/importer/documents"
               className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
             >
