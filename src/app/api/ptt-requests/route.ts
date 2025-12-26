@@ -9,20 +9,7 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, currency, exporterId, exporterBank, maturityDays, incoterms } = body;
-
-    // Get current user
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Extract user from auth header (you might need to adjust this based on your auth setup)
-    // For now, we'll assume the user ID is passed in the request
-    const { userId } = body;
+    const { amount, currency, exporterId, exporterBank, maturityDays, incoterms, userId } = body;
 
     if (!userId) {
       return NextResponse.json(

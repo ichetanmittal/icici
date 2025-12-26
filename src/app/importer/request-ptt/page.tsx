@@ -11,9 +11,16 @@ const INCOTERMS = [
   { value: 'DDP', label: 'DDP - Delivered Duty Paid' },
 ];
 
+interface Exporter {
+  user_id: string;
+  company_name: string;
+  bank_name: string;
+}
+
 export default function RequestPTT() {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('');
+  const [exporters, setExporters] = useState<Exporter[]>([]);
   const [formData, setFormData] = useState({
     amount: '',
     currency: 'USD',
@@ -38,6 +45,22 @@ export default function RequestPTT() {
     loadUser();
   }, [router]);
 
+  useEffect(() => {
+    const loadExporters = async () => {
+      const supabase = createClient();
+      const { data: exporterData } = await supabase
+        .from('user_profiles')
+        .select('user_id, company_name, bank_name')
+        .eq('role', 'exporter')
+        .order('company_name');
+
+      if (exporterData) {
+        setExporters(exporterData);
+      }
+    };
+    loadExporters();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -45,12 +68,15 @@ export default function RequestPTT() {
       [name]: value,
     }));
 
-    // Reset exporter bank when exporter changes
-    if (name === 'exporter') {
-      setFormData(prev => ({
-        ...prev,
-        exporterBank: '',
-      }));
+    // Auto-fill exporter bank when exporter is selected
+    if (name === 'exporter' && value) {
+      const selectedExporter = exporters.find(exp => exp.user_id === value);
+      if (selectedExporter) {
+        setFormData(prev => ({
+          ...prev,
+          exporterBank: selectedExporter.bank_name || 'ICICI Gift IBU',
+        }));
+      }
     }
   };
 
@@ -157,11 +183,17 @@ export default function RequestPTT() {
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select Exporter</option>
-              {/* TODO: Load exporters from database */}
+              {exporters.map((exporter) => (
+                <option key={exporter.user_id} value={exporter.user_id}>
+                  {exporter.company_name}
+                </option>
+              ))}
             </select>
-            <p className="mt-2 text-sm text-gray-500">
-              No connected exporters. Please connect with exporters first.
-            </p>
+            {exporters.length === 0 && (
+              <p className="mt-2 text-sm text-gray-500">
+                No exporters available. Exporters will appear here once they register.
+              </p>
+            )}
           </div>
 
           {/* Exporter's Bank */}
@@ -169,17 +201,19 @@ export default function RequestPTT() {
             <label htmlFor="exporterBank" className="block text-sm font-medium text-gray-700 mb-2">
               Exporter's Bank
             </label>
-            <select
+            <input
+              type="text"
               id="exporterBank"
               name="exporterBank"
               value={formData.exporterBank}
-              onChange={handleChange}
+              readOnly
               disabled={!formData.exporter}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">Select exporter first</option>
-              {/* TODO: Load exporter's bank after exporter is selected */}
-            </select>
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 bg-gray-50 cursor-not-allowed"
+              placeholder="Select exporter first"
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              Auto-populated based on selected exporter
+            </p>
           </div>
 
           {/* Maturity (Days) */}

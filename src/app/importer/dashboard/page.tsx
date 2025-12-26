@@ -33,6 +33,9 @@ export default function ImporterDashboard() {
     settled: 0,
   });
 
+  const [pttRequests, setPttRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const loadDashboardData = async () => {
       const supabase = createClient();
@@ -50,8 +53,23 @@ export default function ImporterDashboard() {
         .eq('user_id', user.id)
         .single();
 
+      // Fetch PTT requests for this importer
+      const { data: requests } = await supabase
+        .from('ptt_requests')
+        .select('*')
+        .eq('importer_id', user.id)
+        .order('created_at', { ascending: false });
+
+      setPttRequests(requests || []);
+
+      // Calculate stats from actual PTT requests
+      const activePTTs = requests?.filter(r => r.status === 'approved' || r.status === 'issued').length || 0;
+      const pendingApprovals = requests?.filter(r => r.status === 'pending').length || 0;
+      const totalValue = requests?.reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
+      const settled = requests?.filter(r => r.status === 'settled').length || 0;
+      const tokensIssued = requests?.filter(r => r.status === 'issued').reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
+
       const creditLimit = profileData?.credit_limit || 0;
-      const tokensIssued = 0; // TODO: Calculate from PTTs
       const availableCredit = creditLimit - tokensIssued;
       const utilization = creditLimit > 0 ? (tokensIssued / creditLimit) * 100 : 0;
 
@@ -63,11 +81,13 @@ export default function ImporterDashboard() {
       });
 
       setStats({
-        activePTTs: 0,
-        pendingApprovals: 0,
-        totalValue: 0,
-        settled: 0,
+        activePTTs,
+        pendingApprovals,
+        totalValue,
+        settled,
       });
+
+      setLoading(false);
     };
 
     loadDashboardData();
@@ -157,18 +177,81 @@ export default function ImporterDashboard() {
           </svg>
         </div>
 
-        {/* Empty State */}
-        <div className="py-16 text-center">
-          <p className="text-gray-600 mb-6">
-            No PTTs found. Request a new PTT to get started.
-          </p>
-          <button
-            onClick={() => router.push('/importer/request-ptt')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Request PTT
-          </button>
-        </div>
+        {loading ? (
+          <div className="py-16 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+            <p className="mt-4 text-sm text-gray-600">Loading PTT requests...</p>
+          </div>
+        ) : pttRequests.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-gray-600 mb-6">
+              No PTTs found. Request a new PTT to get started.
+            </p>
+            <button
+              onClick={() => router.push('/importer/request-ptt')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Request PTT
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Maturity
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Incoterms
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {pttRequests.map((request) => (
+                  <tr key={request.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(request.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {request.currency} {parseFloat(request.amount).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {request.maturity_days} days
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {request.incoterms}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          request.status === 'approved' || request.status === 'issued'
+                            ? 'bg-green-100 text-green-800'
+                            : request.status === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : request.status === 'settled'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {request.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

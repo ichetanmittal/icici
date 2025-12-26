@@ -22,7 +22,18 @@ export default function DashboardPage() {
 
       setUser(user);
 
-      const { data: profileData } = await getUserProfile(user.id);
+      const { data: profileData, error: profileError } = await getUserProfile(user.id);
+
+      // Debug logging
+      console.log('Profile data:', profileData);
+      console.log('Profile error:', profileError);
+
+      if (profileError) {
+        console.error('Failed to fetch profile:', profileError);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
 
       if (profileData?.role === UserRole.DBS_BANK_MAKER || profileData?.role === UserRole.DBS_BANK_CHECKER) {
         router.push('/bank/dashboard');

@@ -140,9 +140,9 @@ export default function RegisterPage() {
       }
 
       if (invitationToken) {
-        // Set bank name based on role - DBS Bank invites importers, Gift IBU invites exporters
+        // Set bank name based on role - DBS Bank invites importers, ICICI Gift IBU invites exporters
         if (formData.role === UserRole.EXPORTER) {
-          signUpData.bankName = 'Gift IBU';
+          signUpData.bankName = 'ICICI Gift IBU';
         } else if (formData.role === UserRole.IMPORTER) {
           signUpData.bankName = 'DBS Bank';
         }
