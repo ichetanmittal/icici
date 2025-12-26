@@ -7,7 +7,6 @@ interface ExporterData {
   user_id: string;
   company_name: string;
   contact_person: string;
-  email: string;
   phone_number: string;
   geography: string;
   bank_name: string;
@@ -30,7 +29,7 @@ export default function MyExporters() {
       // Fetch ALL exporters
       const { data: exporterProfiles } = await supabase
         .from('user_profiles')
-        .select('user_id, company_name, contact_person, email, phone_number, geography, bank_name')
+        .select('user_id, company_name, contact_person, phone_number, geography, bank_name')
         .eq('role', 'exporter')
         .order('company_name');
 
@@ -141,14 +140,10 @@ export default function MyExporters() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Contact Person</p>
                   <p className="text-sm font-medium text-gray-900">{exporter.contact_person}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Email</p>
-                  <p className="text-sm font-medium text-gray-900">{exporter.email}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Phone</p>

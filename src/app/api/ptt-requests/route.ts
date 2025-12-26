@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
       const { data: profiles } = await supabase
         .from('user_profiles')
-        .select('user_id, company_name, contact_person, email, phone_number')
+        .select('user_id, company_name, contact_person, phone_number')
         .in('user_id', allUserIds);
 
       // Map profiles to requests
