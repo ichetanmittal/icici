@@ -63,11 +63,26 @@ export default function ImporterDashboard() {
       setPttRequests(requests || []);
 
       // Calculate stats from actual PTT requests
-      const activePTTs = requests?.filter(r => r.status === 'maker_approved' || r.status === 'issued').length || 0;
+      const activePTTs = requests?.filter(r =>
+        r.status === 'maker_approved' ||
+        r.status === 'issued' ||
+        r.status === 'transferred' ||
+        r.status === 'documents_uploaded' ||
+        r.status === 'documents_approved' ||
+        r.status === 'offered_for_discount' ||
+        r.status === 'discounted'
+      ).length || 0;
       const pendingApprovals = requests?.filter(r => r.status === 'pending' || r.status === 'maker_approved').length || 0;
       const totalValue = requests?.reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
       const settled = requests?.filter(r => r.status === 'settled').length || 0;
-      const tokensIssued = requests?.filter(r => r.status === 'issued').reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
+      const tokensIssued = requests?.filter(r =>
+        r.status === 'issued' ||
+        r.status === 'transferred' ||
+        r.status === 'documents_uploaded' ||
+        r.status === 'documents_approved' ||
+        r.status === 'offered_for_discount' ||
+        r.status === 'discounted'
+      ).reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
 
       const creditLimit = profileData?.credit_limit || 0;
       const availableCredit = creditLimit - tokensIssued;
