@@ -5,10 +5,12 @@ import { supabase } from '@/lib/supabase';
 
 interface PTTRequest {
   id: string;
+  ptt_number: string;
   amount: number;
   currency: string;
   status: string;
   created_at: string;
+  transferred_at: string;
   importer: {
     company_name: string;
   };
@@ -67,9 +69,15 @@ export default function ExporterDashboardPage() {
       }
 
       // Calculate stats
-      const receivedPTTs = requests?.length || 0;
-      const pendingUploads = requests?.filter(r => r.status === 'pending').length || 0;
-      const availableForDiscount = requests?.filter(r => r.status === 'approved').length || 0;
+      const receivedPTTs = requests?.filter(r =>
+        r.status === 'transferred' ||
+        r.status === 'documents_uploaded' ||
+        r.status === 'documents_approved' ||
+        r.status === 'offered_for_discount' ||
+        r.status === 'discounted'
+      ).length || 0;
+      const pendingUploads = requests?.filter(r => r.status === 'transferred').length || 0;
+      const availableForDiscount = requests?.filter(r => r.status === 'documents_approved').length || 0;
       const totalValue = requests?.reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
 
       setStats({
@@ -155,7 +163,10 @@ export default function ExporterDashboardPage() {
               <thead>
                 <tr>
                   <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+                    PTT Number
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Transfer Date
                   </th>
                   <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Importer
@@ -172,37 +183,71 @@ export default function ExporterDashboardPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pttRequests.map((request) => (
-                  <tr key={request.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(request.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {request.importer.company_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {request.currency} {parseFloat(request.amount.toString()).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          request.status === 'approved'
-                            ? 'bg-green-100 text-green-800'
-                            : request.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-orange-600 hover:text-orange-800 font-medium">
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {pttRequests.map((request) => {
+                  const getStatusConfig = (status: string) => {
+                    switch (status) {
+                      case 'transferred':
+                        return { color: 'bg-blue-100 text-blue-800', text: 'Transferred - Upload Docs' };
+                      case 'documents_uploaded':
+                        return { color: 'bg-purple-100 text-purple-800', text: 'Docs Uploaded' };
+                      case 'documents_approved':
+                        return { color: 'bg-green-100 text-green-800', text: 'Docs Approved' };
+                      case 'offered_for_discount':
+                        return { color: 'bg-orange-100 text-orange-800', text: 'Offered for Discount' };
+                      case 'discounted':
+                        return { color: 'bg-green-100 text-green-800', text: 'Discounted' };
+                      case 'settled':
+                        return { color: 'bg-gray-100 text-gray-800', text: 'Settled' };
+                      default:
+                        return { color: 'bg-yellow-100 text-yellow-800', text: status };
+                    }
+                  };
+
+                  const statusConfig = getStatusConfig(request.status);
+
+                  return (
+                    <tr key={request.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-mono font-bold text-blue-600">
+                          {request.ptt_number}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.transferred_at ? new Date(request.transferred_at).toLocaleDateString() : new Date(request.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.importer.company_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.currency} {parseFloat(request.amount.toString()).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusConfig.color}`}>
+                          {statusConfig.text}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {request.status === 'transferred' ? (
+                          <button
+                            onClick={() => window.location.href = `/exporter/documents?ptt=${request.id}`}
+                            className="text-orange-600 hover:text-orange-800 font-medium"
+                          >
+                            Upload Documents
+                          </button>
+                        ) : request.status === 'documents_approved' ? (
+                          <button
+                            onClick={() => window.location.href = `/exporter/offers?ptt=${request.id}`}
+                            className="text-green-600 hover:text-green-800 font-medium"
+                          >
+                            Offer for Discount
+                          </button>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

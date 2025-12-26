@@ -223,9 +223,12 @@ export default function ImporterDashboard() {
                 {pttRequests.map((request) => (
                   <tr key={request.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-mono font-bold text-blue-600">
+                      <button
+                        onClick={() => router.push(`/importer/ptt/${request.id}`)}
+                        className="text-sm font-mono font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      >
                         {request.ptt_number}
-                      </span>
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(request.created_at).toLocaleDateString()}

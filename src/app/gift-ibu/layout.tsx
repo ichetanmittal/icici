@@ -4,16 +4,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
-import { UserRole } from '@/types/user';
 
 interface UserProfile {
-  role: UserRole;
+  role: string;
   company_name: string;
   contact_person: string;
   email?: string;
 }
 
-export default function ImporterLayout({
+export default function GiftIBULayout({
   children,
 }: {
   children: React.ReactNode;
@@ -47,8 +46,8 @@ export default function ImporterLayout({
           email: user.email,
         });
 
-        // Ensure user is an importer
-        if (profileData.role !== UserRole.IMPORTER) {
+        // Ensure user is ICICI Gift IBU maker or checker
+        if (profileData.role !== 'gift_ibu_maker' && profileData.role !== 'gift_ibu_checker') {
           router.push('/dashboard');
           return;
         }
@@ -70,7 +69,7 @@ export default function ImporterLayout({
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"></div>
           <p className="mt-4 text-sm text-gray-600">Loading...</p>
         </div>
       </div>
@@ -78,28 +77,34 @@ export default function ImporterLayout({
   }
 
   const getInitials = () => {
-    if (!profile?.company_name) return 'G';
+    if (!profile?.company_name) return 'I';
     return profile.company_name.charAt(0).toUpperCase();
+  };
+
+  const getRoleDisplay = () => {
+    if (profile?.role === 'gift_ibu_maker') return 'ICICI GIFT IBU - MAKER';
+    if (profile?.role === 'gift_ibu_checker') return 'ICICI GIFT IBU - CHECKER';
+    return 'ICICI GIFT IBU';
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-orange-600 text-white shadow-md">
+      <header className="bg-green-600 text-white shadow-md">
         <div className="flex h-16 items-center justify-between px-6">
-          <Link href="/importer/dashboard" className="text-2xl font-bold">
-            xaults<span className="text-orange-300">*</span>
+          <Link href="/gift-ibu/marketplace" className="text-2xl font-bold">
+            xaults<span className="text-green-300">*</span>
           </Link>
 
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-sm font-semibold">{profile?.company_name}</div>
-              <div className="text-xs text-orange-200">IMPORTER</div>
+              <div className="text-xs text-green-200">{getRoleDisplay()}</div>
             </div>
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-orange-600 font-semibold hover:bg-orange-50 transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-green-600 font-semibold hover:bg-green-50 transition-colors"
               >
                 {getInitials()}
               </button>
@@ -108,7 +113,7 @@ export default function ImporterLayout({
                 <div className="absolute right-0 mt-2 w-64 rounded-lg bg-white shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="font-semibold text-gray-900">{profile?.contact_person}</div>
-                    <div className="text-sm text-gray-500 mt-1">Importer</div>
+                    <div className="text-sm text-gray-500 mt-1">{getRoleDisplay()}</div>
                     <div className="text-sm text-gray-600 mt-1">{profile?.company_name}</div>
                     <div className="text-xs text-gray-500 mt-1">{profile?.email}</div>
                   </div>
@@ -130,38 +135,20 @@ export default function ImporterLayout({
         <aside className="w-64 bg-white shadow-md min-h-[calc(100vh-4rem)]">
           <nav className="p-4 space-y-1">
             <Link
-              href="/importer/dashboard"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
+              href="/gift-ibu/marketplace"
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors font-medium"
             >
-              Dashboard
+              PTT Marketplace
             </Link>
             <Link
-              href="/importer/request-ptt"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
+              href="/gift-ibu/portfolio"
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors font-medium"
             >
-              Request PTT
+              My Portfolio
             </Link>
             <Link
-              href="/importer/transfer-ptt"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
-            >
-              Transfer PTT
-            </Link>
-            <Link
-              href="/importer/documents"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
-            >
-              Review Documents
-            </Link>
-            <Link
-              href="/importer/exporters"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
-            >
-              My Exporters
-            </Link>
-            <Link
-              href="/importer/profile"
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors font-medium"
+              href="/gift-ibu/profile"
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors font-medium"
             >
               Profile
             </Link>
