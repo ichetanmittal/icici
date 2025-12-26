@@ -63,8 +63,8 @@ export default function ImporterDashboard() {
       setPttRequests(requests || []);
 
       // Calculate stats from actual PTT requests
-      const activePTTs = requests?.filter(r => r.status === 'approved' || r.status === 'issued').length || 0;
-      const pendingApprovals = requests?.filter(r => r.status === 'pending').length || 0;
+      const activePTTs = requests?.filter(r => r.status === 'maker_approved' || r.status === 'issued').length || 0;
+      const pendingApprovals = requests?.filter(r => r.status === 'pending' || r.status === 'maker_approved').length || 0;
       const totalValue = requests?.reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
       const settled = requests?.filter(r => r.status === 'settled').length || 0;
       const tokensIssued = requests?.filter(r => r.status === 'issued').reduce((sum, r) => sum + parseFloat(r.amount.toString()), 0) || 0;
@@ -200,6 +200,9 @@ export default function ImporterDashboard() {
               <thead>
                 <tr>
                   <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    PTT Number
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
                   <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -219,6 +222,11 @@ export default function ImporterDashboard() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {pttRequests.map((request) => (
                   <tr key={request.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-mono font-bold text-blue-600">
+                        {request.ptt_number}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(request.created_at).toLocaleDateString()}
                     </td>
@@ -234,16 +242,21 @@ export default function ImporterDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          request.status === 'approved' || request.status === 'issued'
+                          request.status === 'issued'
                             ? 'bg-green-100 text-green-800'
+                            : request.status === 'maker_approved'
+                            ? 'bg-blue-100 text-blue-800'
+                            : request.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
                             : request.status === 'rejected'
                             ? 'bg-red-100 text-red-800'
                             : request.status === 'settled'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {request.status}
+                        {request.status === 'maker_approved' ? 'Maker Approved' :
+                         request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </span>
                     </td>
                   </tr>

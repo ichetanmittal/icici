@@ -10,6 +10,10 @@ const lexend = Lexend({
 export const metadata: Metadata = {
   title: "ICICI Trade Finance Platform",
   description: "Trade finance platform for exporters, importers, and funders",
+  icons: {
+    icon: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
 };
 
 export default function RootLayout({

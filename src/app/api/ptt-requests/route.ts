@@ -6,6 +6,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Generate unique PTT number
+async function generatePTTNumber(): Promise<string> {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const prefix = `PTT-${year}${month}`;
+
+  // Get count of PTTs created this month
+  const { count } = await supabase
+    .from('ptt_requests')
+    .select('*', { count: 'exact', head: true })
+    .gte('created_at', `${year}-${month}-01`)
+    .lt('created_at', `${year}-${String(parseInt(month) + 1).padStart(2, '0')}-01`);
+
+  const sequence = String((count || 0) + 1).padStart(4, '0');
+  return `${prefix}-${sequence}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -48,10 +66,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate PTT number
+    const pttNumber = await generatePTTNumber();
+
     // Create PTT request
     const { data: pttRequest, error: insertError } = await supabase
       .from('ptt_requests')
       .insert({
+        ptt_number: pttNumber,
         amount: parseFloat(amount),
         currency,
         maturity_days: parseInt(maturityDays),
@@ -61,6 +83,7 @@ export async function POST(request: NextRequest) {
         importer_bank: userProfile.bank_name || 'DBS Bank',
         exporter_bank: exporterBank || null,
         status: 'pending',
+        requested_at: new Date().toISOString(),
       })
       .select()
       .single();
