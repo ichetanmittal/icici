@@ -11,10 +11,10 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { entityName, geography, pocName, pocEmail, pocPhone, creditLimit } = body;
+    const { entityName, geography, pocName, pocEmail, pocPhone, creditLimit, bankAccountNumber, swiftCode } = body;
 
     // Validate required fields
-    if (!entityName || !geography || !pocName || !pocEmail || !pocPhone || !creditLimit) {
+    if (!entityName || !geography || !pocName || !pocEmail || !pocPhone || !creditLimit || !bankAccountNumber || !swiftCode) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
         poc_email: pocEmail,
         poc_phone: pocPhone,
         credit_limit: parseFloat(creditLimit),
+        bank_account_number: bankAccountNumber,
+        swift_code: swiftCode,
       })
       .select()
       .single();
@@ -128,6 +130,20 @@ export async function POST(request: NextRequest) {
                             </table>
 
                             <h4 style="margin: 20px 0 10px; color: #111827; font-size: 14px; font-weight: 600;">
+                              Banking Information
+                            </h4>
+                            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                              <tr>
+                                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Account Number:</td>
+                                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bankAccountNumber}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">SWIFT Code:</td>
+                                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${swiftCode}</td>
+                              </tr>
+                            </table>
+
+                            <h4 style="margin: 20px 0 10px; color: #111827; font-size: 14px; font-weight: 600;">
                               Point of Contact
                             </h4>
                             <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -193,6 +209,10 @@ export async function POST(request: NextRequest) {
         - Entity Name: ${entityName}
         - Geography: ${geography}
         - Credit Limit: $${parseFloat(creditLimit).toLocaleString()}
+
+        Banking Information:
+        - Account Number: ${bankAccountNumber}
+        - SWIFT Code: ${swiftCode}
 
         Point of Contact:
         - Name: ${pocName}

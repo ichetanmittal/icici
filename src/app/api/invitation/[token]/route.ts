@@ -56,6 +56,8 @@ export async function GET(
       pocEmail: invitation.poc_email,
       pocPhone: invitation.poc_phone,
       creditLimit: invitation.credit_limit,
+      bankAccountNumber: invitation.bank_account_number,
+      swiftCode: invitation.swift_code,
     });
   } catch (error) {
     console.error('Error fetching invitation:', error);

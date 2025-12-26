@@ -12,6 +12,8 @@ export interface SignUpData {
   geography?: string;
   creditLimit?: number;
   bankName?: string;
+  bankAccountNumber?: string;
+  swiftCode?: string;
 }
 
 export interface SignInData {
@@ -21,7 +23,7 @@ export interface SignInData {
 
 export const signUp = async (data: SignUpData) => {
   try {
-    const { email, password, role, companyName, contactPerson, phoneNumber, treasuryBalance, geography, creditLimit, bankName } = data;
+    const { email, password, role, companyName, contactPerson, phoneNumber, treasuryBalance, geography, creditLimit, bankName, bankAccountNumber, swiftCode } = data;
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -63,6 +65,14 @@ export const signUp = async (data: SignUpData) => {
 
       if (bankName) {
         profileData.bank_name = bankName;
+      }
+
+      if (bankAccountNumber) {
+        profileData.bank_account_number = bankAccountNumber;
+      }
+
+      if (swiftCode) {
+        profileData.swift_code = swiftCode;
       }
 
       const { error: profileError } = await supabase

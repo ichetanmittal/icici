@@ -22,6 +22,8 @@ export default function RegisterPage() {
     treasuryBalance: '',
     geography: '',
     creditLimit: '',
+    bankAccountNumber: '',
+    swiftCode: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,6 +50,8 @@ export default function RegisterPage() {
               phoneNumber: data.pocPhone,
               geography: data.geography,
               creditLimit: data.creditLimit,
+              bankAccountNumber: data.bankAccountNumber,
+              swiftCode: data.swiftCode,
             }));
             setIsInvited(true);
           }
@@ -115,13 +119,21 @@ export default function RegisterPage() {
         signUpData.treasuryBalance = parseFloat(formData.treasuryBalance);
       }
 
-      // If user registered via invitation, include geography, credit limit, and bank name
+      // If user registered via invitation, include geography, credit limit, banking info, and bank name
       if (invitationToken && formData.geography) {
         signUpData.geography = formData.geography;
       }
 
       if (invitationToken && formData.creditLimit) {
         signUpData.creditLimit = parseFloat(formData.creditLimit);
+      }
+
+      if (invitationToken && formData.bankAccountNumber) {
+        signUpData.bankAccountNumber = formData.bankAccountNumber;
+      }
+
+      if (invitationToken && formData.swiftCode) {
+        signUpData.swiftCode = formData.swiftCode;
       }
 
       if (invitationToken) {

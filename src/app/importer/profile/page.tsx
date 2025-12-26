@@ -78,7 +78,7 @@ export default function ImporterProfile() {
         <div className="grid grid-cols-2 gap-x-12 gap-y-6">
           <div>
             <label className="block text-sm text-gray-600 mb-1">Full Name</label>
-            <p className="text-base text-gray-900 font-medium">{profile?.company_name || 'Not specified'}</p>
+            <p className="text-base text-gray-900 font-medium">{profile?.contact_person || 'Not specified'}</p>
           </div>
 
           <div>

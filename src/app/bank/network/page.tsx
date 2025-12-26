@@ -10,6 +10,8 @@ export default function NetworkManagementPage() {
     pocEmail: '',
     pocPhone: '',
     creditLimit: '',
+    bankAccountNumber: '',
+    swiftCode: '',
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -46,6 +48,8 @@ export default function NetworkManagementPage() {
           pocEmail: '',
           pocPhone: '',
           creditLimit: '',
+          bankAccountNumber: '',
+          swiftCode: '',
         });
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to send invitation' });
@@ -176,6 +180,44 @@ export default function NetworkManagementPage() {
               </div>
 
               <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Banking Information</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="bankAccountNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                      Bank Account Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="bankAccountNumber"
+                      name="bankAccountNumber"
+                      required
+                      value={formData.bankAccountNumber}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Account number"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="swiftCode" className="block text-sm font-medium text-gray-700 mb-2">
+                      IFSC / SWIFT Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="swiftCode"
+                      name="swiftCode"
+                      required
+                      value={formData.swiftCode}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="SWIFT/IFSC code"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Credit Limit Assignment</h3>
 
                 <div>
@@ -222,6 +264,8 @@ export default function NetworkManagementPage() {
                     pocEmail: '',
                     pocPhone: '',
                     creditLimit: '',
+                    bankAccountNumber: '',
+                    swiftCode: '',
                   })}
                   className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
