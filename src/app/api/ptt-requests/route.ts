@@ -111,20 +111,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('ptt_requests')
-      .select(`
-        *,
-        importer:user_profiles!ptt_requests_importer_id_fkey(
-          company_name,
-          contact_person,
-          email,
-          phone_number
-        ),
-        exporter:user_profiles!ptt_requests_exporter_id_fkey(
-          company_name,
-          contact_person,
-          email
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (status) {
@@ -145,7 +132,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ requests });
+    // Fetch user profiles for importers and exporters
+    if (requests && requests.length > 0) {
+      const importerIds = requests.map(r => r.importer_id).filter(Boolean);
+      const exporterIds = requests.map(r => r.exporter_id).filter(Boolean);
+      const allUserIds = [...new Set([...importerIds, ...exporterIds])];
+
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, company_name, contact_person, email, phone_number')
+        .in('user_id', allUserIds);
+
+      // Map profiles to requests
+      const requestsWithProfiles = requests.map(request => ({
+        ...request,
+        importer: profiles?.find(p => p.user_id === request.importer_id) || null,
+        exporter: profiles?.find(p => p.user_id === request.exporter_id) || null,
+      }));
+
+      return NextResponse.json({ requests: requestsWithProfiles });
+    }
+
+    return NextResponse.json({ requests: [] });
   } catch (error) {
     console.error('Error in GET PTT requests:', error);
     return NextResponse.json(

@@ -1,53 +1,56 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser, getUserProfile, signOut } from '@/lib/auth';
-import { UserRole } from '@/types/user';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
+import { signOut } from '@/lib/auth';
 
-const navigation = [
-  { name: 'Marketplace', href: '/funder/dashboard' },
-  { name: 'My Portfolio', href: '/funder/portfolio' },
-  { name: 'Pending Approvals', href: '/funder/approvals' },
-  { name: 'Managing Exporters', href: '/funder/network' },
-];
-
-export default function FunderLayout({
+export default function ExporterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const { user, error } = await getCurrentUser();
-
-      if (error || !user) {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         router.push('/login');
         return;
       }
 
-      const { data: profileData } = await getUserProfile(user.id);
+      setUser(user);
 
-      if (!profileData || (profileData.role !== UserRole.GIFT_IBU_MAKER && profileData.role !== UserRole.GIFT_IBU_CHECKER)) {
+      const { data: userProfile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        router.push('/login');
+        return;
+      }
+
+      if (userProfile?.role !== 'exporter') {
         router.push('/dashboard');
         return;
       }
 
-      setUser(user);
-      setProfile(profileData);
+      setProfile(userProfile);
       setLoading(false);
     };
 
-    loadUser();
+    fetchProfile();
   }, [router]);
 
   useEffect(() => {
@@ -66,19 +69,13 @@ export default function FunderLayout({
     router.push('/login');
   };
 
-  const getOrganizationName = () => {
-    return 'Gift IBU Funder';
-  };
-
-  const getUserRole = () => {
-    if (profile?.role === UserRole.GIFT_IBU_MAKER) {
-      return 'Maker';
-    }
-    if (profile?.role === UserRole.GIFT_IBU_CHECKER) {
-      return 'Checker';
-    }
-    return '';
-  };
+  const navigation = [
+    { name: 'Dashboard', href: '/exporter/dashboard' },
+    { name: 'Upload Documents', href: '/exporter/documents' },
+    { name: 'Discount Offers', href: '/exporter/offers' },
+    { name: 'My Importers', href: '/exporter/importers' },
+    { name: 'Profile', href: '/exporter/profile' },
+  ];
 
   if (loading) {
     return (
@@ -90,12 +87,15 @@ export default function FunderLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-700 shadow-lg">
+      {/* Header */}
+      <header className="bg-orange-600 shadow-lg">
         <div className="mx-auto flex h-16 max-w-full items-center justify-between px-8">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-white tracking-wide">
-              xaults<span className="text-blue-300">*</span>
-            </h1>
+            <Link href="/exporter/dashboard">
+              <h1 className="text-2xl font-bold text-white tracking-wide">
+                xaults<span className="text-orange-300">*</span>
+              </h1>
+            </Link>
           </div>
           <div className="relative" ref={dropdownRef}>
             <button
@@ -104,10 +104,10 @@ export default function FunderLayout({
             >
               <div className="text-right">
                 <p className="text-sm font-semibold text-white">{profile?.contact_person || 'User'}</p>
-                <p className="text-xs text-blue-200">{getUserRole()}</p>
+                <p className="text-xs text-orange-200">Exporter</p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-700 font-bold text-lg cursor-pointer hover:bg-blue-50 transition-colors">
-                {profile?.contact_person?.charAt(0).toUpperCase() || 'G'}
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-orange-600 font-bold text-lg cursor-pointer hover:bg-orange-50 transition-colors">
+                {profile?.contact_person?.charAt(0).toUpperCase() || 'E'}
               </div>
             </button>
 
@@ -115,8 +115,8 @@ export default function FunderLayout({
               <div className="absolute right-0 mt-2 w-72 rounded-lg bg-white shadow-xl border border-gray-200 py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-200">
                   <p className="text-lg font-bold text-gray-900">{profile?.contact_person || 'User'}</p>
-                  <p className="text-sm text-gray-600 mt-1">Role: {getUserRole()}</p>
-                  <p className="text-sm text-gray-600">Organization: {getOrganizationName()}</p>
+                  <p className="text-sm text-gray-600 mt-1">Role: Exporter</p>
+                  <p className="text-sm text-gray-600">Company: {profile?.company_name || 'N/A'}</p>
                   <p className="text-sm text-gray-500 mt-2">{user?.email}</p>
                 </div>
                 <button
@@ -132,6 +132,7 @@ export default function FunderLayout({
       </header>
 
       <div className="flex">
+        {/* Sidebar */}
         <aside className="w-64 bg-white shadow-md min-h-[calc(100vh-4rem)]">
           <nav className="px-4 py-6">
             <ul className="space-y-2">
@@ -143,7 +144,7 @@ export default function FunderLayout({
                       href={item.href}
                       className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                         isActive
-                          ? 'bg-blue-50 text-blue-700 font-semibold'
+                          ? 'bg-orange-50 text-orange-700 font-semibold'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -156,6 +157,7 @@ export default function FunderLayout({
           </nav>
         </aside>
 
+        {/* Main Content */}
         <main className="flex-1 p-8">
           {children}
         </main>

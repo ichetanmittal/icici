@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getCurrentUser, getUserProfile } from '@/lib/auth';
-import StatCard from '@/components/StatCard';
 
 export default function FunderDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -29,45 +28,51 @@ export default function FunderDashboardPage() {
     );
   }
 
-  const treasuryBalance = profile?.current_balance || 0;
+  const accountBalance = profile?.current_balance || 0;
+  const availableOffers = 0; // TODO: Fetch from database
+  const totalInvestment = 0; // TODO: Calculate from marketplace
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Marketplace</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <StatCard
-          title="Treasury Balance"
-          value={`$${treasuryBalance.toLocaleString()}`}
-          subtitle="Available funds"
-          color="green"
-        />
-        <StatCard
-          title="Pending Requests"
-          value={0}
-          color="orange"
-        />
-        <StatCard
-          title="Issued PTTs"
-          value={0}
-          color="purple"
-        />
-        <StatCard
-          title="Total Exposure"
-          value="$0"
-          color="blue"
-        />
-        <StatCard
-          title="Pending Settlements"
-          value={0}
-          color="orange"
-        />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Account Balance */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Account Balance</h3>
+          <p className="text-3xl font-bold text-blue-600 mb-1">
+            ${accountBalance.toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500">Available funds</p>
+        </div>
+
+        {/* Available Offers */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Available Offers</h3>
+          <p className="text-3xl font-bold text-green-600 mb-1">
+            {availableOffers}
+          </p>
+          <p className="text-xs text-gray-500">In marketplace</p>
+        </div>
+
+        {/* Total Investment Available */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Total Investment Available</h3>
+          <p className="text-3xl font-bold text-purple-600 mb-1">
+            ${totalInvestment.toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500">Combined asking price</p>
+        </div>
       </div>
 
-      <div className="rounded-lg bg-white p-8 shadow-md border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Pending PTT Requests</h2>
+      {/* Available PTTs for Investment */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">Available PTTs for Investment</h2>
+
+        {/* Empty State */}
         <div className="flex items-center justify-center py-16">
-          <p className="text-gray-500">No pending requests</p>
+          <p className="text-gray-500">No PTTs available in marketplace</p>
         </div>
       </div>
     </div>

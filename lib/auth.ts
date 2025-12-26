@@ -48,6 +48,7 @@ export const signUp = async (data: SignUpData) => {
         company_name: companyName,
         contact_person: contactPerson,
         phone_number: phoneNumber,
+        email: email,
       };
 
       if (treasuryBalance !== undefined) {

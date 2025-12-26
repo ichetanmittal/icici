@@ -11,10 +11,10 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { entityName, geography, pocName, pocEmail, pocPhone, creditLimit, bankAccountNumber, swiftCode } = body;
+    const { entityName, geography, pocName, pocEmail, pocPhone, bankAccountNumber, swiftCode } = body;
 
     // Validate required fields
-    if (!entityName || !geography || !pocName || !pocEmail || !pocPhone || !creditLimit || !bankAccountNumber || !swiftCode) {
+    if (!entityName || !geography || !pocName || !pocEmail || !pocPhone || !bankAccountNumber || !swiftCode) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -23,9 +23,6 @@ export async function POST(request: NextRequest) {
 
     // Generate unique invitation token
     const token = crypto.randomBytes(32).toString('hex');
-
-    // Get current user from authorization header (you might need to implement this)
-    // For now, we'll store it without invited_by
 
     // Store invitation in database
     const { data: invitation, error: dbError } = await supabase
@@ -37,10 +34,10 @@ export async function POST(request: NextRequest) {
         poc_name: pocName,
         poc_email: pocEmail,
         poc_phone: pocPhone,
-        credit_limit: parseFloat(creditLimit),
+        credit_limit: 0, // Not applicable for exporters
         bank_account_number: bankAccountNumber,
         swift_code: swiftCode,
-        invited_role: 'importer',
+        invited_role: 'exporter',
       })
       .select()
       .single();
@@ -68,7 +65,7 @@ export async function POST(request: NextRequest) {
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: pocEmail,
-      subject: 'Invitation to Join ICICI Trade Finance Platform',
+      subject: 'Invitation to Join ICICI Trade Finance Platform as Exporter',
       html: `
         <!DOCTYPE html>
         <html>
@@ -84,11 +81,11 @@ export async function POST(request: NextRequest) {
                 <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                   <!-- Header -->
                   <tr>
-                    <td style="padding: 40px 40px 30px; background-color: #ea580c; border-radius: 8px 8px 0 0;">
+                    <td style="padding: 40px 40px 30px; background-color: #1e40af; border-radius: 8px 8px 0 0;">
                       <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                        xaults<span style="color: #fdba74;">*</span>
+                        xaults<span style="color: #93c5fd;">*</span>
                       </h1>
-                      <p style="margin: 8px 0 0; color: #fed7aa; font-size: 14px;">Trade Finance Platform</p>
+                      <p style="margin: 8px 0 0; color: #bfdbfe; font-size: 14px;">Trade Finance Platform</p>
                     </td>
                   </tr>
 
@@ -104,7 +101,7 @@ export async function POST(request: NextRequest) {
                       </p>
 
                       <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                        You have been invited to join the <strong>ICICI Trade Finance Platform</strong> as an Importer.
+                        You have been invited to join the <strong>ICICI Trade Finance Platform</strong> as an Exporter.
                         We're excited to have <strong>${entityName}</strong> join our network.
                       </p>
 
@@ -123,10 +120,6 @@ export async function POST(request: NextRequest) {
                               <tr>
                                 <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Geography:</td>
                                 <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${geography}</td>
-                              </tr>
-                              <tr>
-                                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Credit Limit:</td>
-                                <td style="padding: 8px 0; color: #16a34a; font-size: 14px; font-weight: 600; text-align: right;">$${parseFloat(creditLimit).toLocaleString()}</td>
                               </tr>
                             </table>
 
@@ -204,12 +197,11 @@ export async function POST(request: NextRequest) {
       text: `
         Dear ${pocName},
 
-        You have been invited to join the ICICI Trade Finance Platform as an Importer.
+        You have been invited to join the ICICI Trade Finance Platform as an Exporter.
 
         Invitation Details:
         - Entity Name: ${entityName}
         - Geography: ${geography}
-        - Credit Limit: $${parseFloat(creditLimit).toLocaleString()}
 
         Banking Information:
         - Account Number: ${bankAccountNumber}

@@ -9,7 +9,8 @@ export default function FunderNetworkPage() {
     pocName: '',
     pocEmail: '',
     pocPhone: '',
-    creditLimit: '',
+    bankAccountNumber: '',
+    swiftCode: '',
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -27,7 +28,7 @@ export default function FunderNetworkPage() {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch('/api/invite-importer', {
+      const response = await fetch('/api/invite-exporter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +46,8 @@ export default function FunderNetworkPage() {
           pocName: '',
           pocEmail: '',
           pocPhone: '',
-          creditLimit: '',
+          bankAccountNumber: '',
+          swiftCode: '',
         });
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to send invitation' });
@@ -61,14 +63,14 @@ export default function FunderNetworkPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Managing Network</h1>
-        <p className="text-gray-600">Invite and manage importers in your network</p>
+        <p className="text-gray-600">Invite and manage exporters in your network</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Invite Form */}
         <div className="lg:col-span-2">
           <div className="rounded-lg bg-white p-8 shadow-md border border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Invite Importer</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Invite Exporter</h2>
 
             {message.text && (
               <div className={`mb-6 p-4 rounded-lg ${
@@ -93,7 +95,7 @@ export default function FunderNetworkPage() {
                   value={formData.entityName}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Enter importer company name"
+                  placeholder="Enter exporter company name"
                 />
               </div>
 
@@ -176,32 +178,40 @@ export default function FunderNetworkPage() {
               </div>
 
               <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Credit Limit Assignment</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Banking Information</h3>
 
-                <div>
-                  <label htmlFor="creditLimit" className="block text-sm font-medium text-gray-700 mb-2">
-                    Credit Limit (USD) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                      <span className="text-gray-500">$</span>
-                    </div>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="bankAccountNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                      Bank Account Number <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="number"
-                      id="creditLimit"
-                      name="creditLimit"
+                      type="text"
+                      id="bankAccountNumber"
+                      name="bankAccountNumber"
                       required
-                      min="0"
-                      step="1000"
-                      value={formData.creditLimit}
+                      value={formData.bankAccountNumber}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 pl-8 pr-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="0.00"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Enter bank account number"
                     />
                   </div>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Maximum credit limit for this importer
-                  </p>
+
+                  <div>
+                    <label htmlFor="swiftCode" className="block text-sm font-medium text-gray-700 mb-2">
+                      IFSC / SWIFT Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="swiftCode"
+                      name="swiftCode"
+                      required
+                      value={formData.swiftCode}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Enter IFSC or SWIFT code"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -221,7 +231,8 @@ export default function FunderNetworkPage() {
                     pocName: '',
                     pocEmail: '',
                     pocPhone: '',
-                    creditLimit: '',
+                    bankAccountNumber: '',
+                    swiftCode: '',
                   })}
                   className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
@@ -232,7 +243,7 @@ export default function FunderNetworkPage() {
           </div>
         </div>
 
-        {/* Invited Importers List */}
+        {/* Invited Exporters List */}
         <div className="lg:col-span-1">
           <div className="rounded-lg bg-white p-6 shadow-md border border-gray-200 sticky top-8">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Invitations</h2>

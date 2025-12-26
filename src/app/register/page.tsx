@@ -41,15 +41,18 @@ export default function RegisterPage() {
             setError(data.error);
           } else {
             // Pre-fill form with invitation data
+            // Use invitedRole from API (can be 'importer' or 'exporter')
+            const role = data.invitedRole === 'exporter' ? UserRole.EXPORTER : UserRole.IMPORTER;
+
             setFormData(prev => ({
               ...prev,
-              role: UserRole.IMPORTER,
+              role: role,
               companyName: data.entityName,
               contactPerson: data.pocName,
               email: data.pocEmail,
               phoneNumber: data.pocPhone,
               geography: data.geography,
-              creditLimit: data.creditLimit,
+              creditLimit: data.creditLimit || '',
               bankAccountNumber: data.bankAccountNumber,
               swiftCode: data.swiftCode,
             }));
@@ -137,8 +140,12 @@ export default function RegisterPage() {
       }
 
       if (invitationToken) {
-        // Set bank name as DBS Bank since they sent the invitation
-        signUpData.bankName = 'DBS Bank';
+        // Set bank name based on role - DBS Bank invites importers, Gift IBU invites exporters
+        if (formData.role === UserRole.EXPORTER) {
+          signUpData.bankName = 'Gift IBU';
+        } else if (formData.role === UserRole.IMPORTER) {
+          signUpData.bankName = 'DBS Bank';
+        }
       }
 
       const { data, error } = await signUp(signUpData);

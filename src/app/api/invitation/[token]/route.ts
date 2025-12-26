@@ -58,6 +58,7 @@ export async function GET(
       creditLimit: invitation.credit_limit,
       bankAccountNumber: invitation.bank_account_number,
       swiftCode: invitation.swift_code,
+      invitedRole: invitation.invited_role || 'importer',
     });
   } catch (error) {
     console.error('Error fetching invitation:', error);
