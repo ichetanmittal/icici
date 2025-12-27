@@ -8,19 +8,6 @@ const supabase = createClient(
 
 export async function POST() {
   try {
-    // Drop old policy
-    await supabase.rpc('exec_sql', {
-      sql: `DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;`
-    }).catch(() => {
-      // Ignore error if RPC doesn't exist, we'll use direct SQL
-    });
-
-    // Since RPC might not be available, let's try direct policy creation
-    const { error: dropError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .limit(0);
-
     // Create new policy using raw SQL
     const sql = `
       DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;

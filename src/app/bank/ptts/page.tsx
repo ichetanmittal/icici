@@ -112,7 +112,7 @@ export default function OutstandingPTTsPage() {
           title="Matured"
           value={totalOutstanding - activePTTs}
           subtitle="Awaiting settlement"
-          color="red"
+          color="orange"
         />
         <StatCard
           title="Total Exposure"
