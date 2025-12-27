@@ -213,13 +213,20 @@ export default function OutstandingPTTsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          isMatured
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {isMatured ? 'Matured' : 'Active'}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            ptt.status === 'discounted'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {ptt.status === 'discounted' ? 'Discounted' : 'Issued'}
+                          </span>
+                          {isMatured && (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                              Matured
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
