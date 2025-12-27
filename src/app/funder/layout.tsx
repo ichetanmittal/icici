@@ -90,11 +90,11 @@ export default function FunderLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-700 shadow-lg">
+      <header className="bg-orange-600 shadow-lg">
         <div className="mx-auto flex h-16 max-w-full items-center justify-between px-8">
           <div className="flex items-center">
             <h1 className="text-2xl font-bold text-white tracking-wide">
-              xaults<span className="text-blue-300">*</span>
+              xaults<span className="text-orange-300">*</span>
             </h1>
           </div>
           <div className="relative" ref={dropdownRef}>
@@ -104,9 +104,9 @@ export default function FunderLayout({
             >
               <div className="text-right">
                 <p className="text-sm font-semibold text-white">{profile?.contact_person || 'User'}</p>
-                <p className="text-xs text-blue-200">{getUserRole()}</p>
+                <p className="text-xs text-orange-200">{getUserRole()}</p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-700 font-bold text-lg cursor-pointer hover:bg-blue-50 transition-colors">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-orange-600 font-bold text-lg cursor-pointer hover:bg-orange-50 transition-colors">
                 {profile?.contact_person?.charAt(0).toUpperCase() || 'G'}
               </div>
             </button>
@@ -143,7 +143,7 @@ export default function FunderLayout({
                       href={item.href}
                       className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                         isActive
-                          ? 'bg-blue-50 text-blue-700 font-semibold'
+                          ? 'bg-orange-50 text-orange-700 font-semibold'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
