@@ -26,6 +26,7 @@ interface PTTRequest {
 export default function FunderDashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
   const [offeredPTTs, setOfferedPTTs] = useState<PTTRequest[]>([]);
   const [selectedPTT, setSelectedPTT] = useState<PTTRequest | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,19 +46,36 @@ export default function FunderDashboardPage() {
 
       setUserId(user.id);
 
-      // Fetch PTTs offered for discount
-      const { data: requests } = await supabase
-        .from('ptt_requests')
-        .select(`
-          *,
-          exporter:user_profiles!ptt_requests_exporter_id_fkey(company_name, contact_person),
-          importer:user_profiles!ptt_requests_importer_id_fkey(company_name)
-        `)
-        .eq('status', 'offered_for_discount')
-        .order('offered_for_discount_at', { ascending: false });
+      // Get user role
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
 
-      if (requests) {
-        setOfferedPTTs(requests);
+      if (profile) {
+        setUserRole(profile.role);
+
+        // Determine which status to fetch based on role
+        let statusFilter = 'offered_for_discount';
+        if (profile.role === 'gift_ibu_checker') {
+          statusFilter = 'discount_maker_approved';
+        }
+
+        // Fetch PTTs based on role
+        const { data: requests } = await supabase
+          .from('ptt_requests')
+          .select(`
+            *,
+            exporter:user_profiles!ptt_requests_exporter_id_fkey(company_name, contact_person),
+            importer:user_profiles!ptt_requests_importer_id_fkey(company_name)
+          `)
+          .eq('status', statusFilter)
+          .order(statusFilter === 'offered_for_discount' ? 'offered_for_discount_at' : 'discount_maker_approved_at', { ascending: false });
+
+        if (requests) {
+          setOfferedPTTs(requests);
+        }
       }
 
       setLoading(false);
@@ -84,12 +102,23 @@ export default function FunderDashboardPage() {
     const discountedAmount = calculateDiscountedAmount(selectedPTT.amount, selectedPTT.discount_percentage);
     const returnAmount = calculateReturn(selectedPTT.amount, selectedPTT.discount_percentage);
 
-    if (!confirm(
-      `Accept discount offer for PTT ${selectedPTT.ptt_number}?\n\n` +
-      `You will pay: ${selectedPTT.currency} ${discountedAmount.toLocaleString()}\n` +
-      `You will receive at maturity: ${selectedPTT.currency} ${selectedPTT.amount.toLocaleString()}\n` +
-      `Expected return: ${selectedPTT.currency} ${returnAmount.toLocaleString()} (${selectedPTT.discount_percentage}%)`
-    )) {
+    const isMaker = userRole === 'gift_ibu_maker';
+    const isChecker = userRole === 'gift_ibu_checker';
+    const action = isMaker ? 'maker_approve' : 'checker_approve';
+
+    const confirmMessage = isMaker
+      ? `Approve discount offer for PTT ${selectedPTT.ptt_number} as Maker?\n\n` +
+        `Purchase Amount: ${selectedPTT.currency} ${discountedAmount.toLocaleString()}\n` +
+        `Maturity Value: ${selectedPTT.currency} ${selectedPTT.amount.toLocaleString()}\n` +
+        `Expected Return: ${selectedPTT.currency} ${returnAmount.toLocaleString()} (${selectedPTT.discount_percentage}%)\n\n` +
+        `This will require Checker approval before purchase is finalized.`
+      : `Finalize discount purchase for PTT ${selectedPTT.ptt_number} as Checker?\n\n` +
+        `You will pay: ${selectedPTT.currency} ${discountedAmount.toLocaleString()}\n` +
+        `You will receive at maturity: ${selectedPTT.currency} ${selectedPTT.amount.toLocaleString()}\n` +
+        `Expected return: ${selectedPTT.currency} ${returnAmount.toLocaleString()} (${selectedPTT.discount_percentage}%)\n\n` +
+        `This is the FINAL APPROVAL - the purchase will be completed.`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -104,7 +133,7 @@ export default function FunderDashboardPage() {
         body: JSON.stringify({
           pttId: selectedPTT.id,
           userId,
-          action: 'accept',
+          action,
         }),
       });
 
@@ -114,7 +143,7 @@ export default function FunderDashboardPage() {
         throw new Error(data.error || 'Failed to accept discount offer');
       }
 
-      alert(`Discount offer accepted for PTT ${selectedPTT.ptt_number}!`);
+      alert(data.message);
 
       // Remove from list
       setOfferedPTTs(prev => prev.filter(ptt => ptt.id !== selectedPTT.id));
@@ -180,13 +209,31 @@ export default function FunderDashboardPage() {
     );
   }
 
+  const isMaker = userRole === 'gift_ibu_maker';
+  const isChecker = userRole === 'gift_ibu_checker';
+
   return (
     <div className="max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">
-          Review and accept discount offers from exporters
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {isMaker && 'Marketplace - Maker Review'}
+              {isChecker && 'Marketplace - Checker Approval'}
+              {!isMaker && !isChecker && 'Marketplace'}
+            </h1>
+            <p className="text-gray-600">
+              {isMaker && 'Review and approve discount offers for checker approval'}
+              {isChecker && 'Finalize discount purchases approved by makers'}
+              {!isMaker && !isChecker && 'Review and accept discount offers from exporters'}
+            </p>
+          </div>
+          {(isMaker || isChecker) && (
+            <span className="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium">
+              {isMaker ? 'Maker' : 'Checker'}
+            </span>
+          )}
+        </div>
       </div>
 
 
@@ -352,9 +399,13 @@ export default function FunderDashboardPage() {
                   <button
                     onClick={handleAccept}
                     disabled={processing}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className={`flex-1 px-6 py-3 text-white rounded-lg transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed ${
+                      isMaker ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'
+                    }`}
                   >
-                    {processing ? 'Processing...' : 'Accept & Purchase'}
+                    {processing ? 'Processing...' : (
+                      isMaker ? 'Approve Offer' : 'Accept & Purchase'
+                    )}
                   </button>
                 </div>
               </div>
