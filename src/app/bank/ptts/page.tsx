@@ -14,6 +14,8 @@ interface PTTRequest {
   incoterms: string;
   status: string;
   created_at: string;
+  discount_percentage?: number;
+  discounted_at?: string;
   importer: {
     company_name: string;
     contact_person: string;
@@ -31,13 +33,23 @@ export default function OutstandingPTTsPage() {
   useEffect(() => {
     const loadIssuedPTTs = async () => {
       try {
-        const response = await fetch('/api/ptt-requests?status=issued&importerBank=DBS Bank');
-        const data = await response.json();
-        if (data.requests) {
-          setIssuedPTTs(data.requests);
-        }
+        // Fetch both issued and discounted PTTs (outstanding until settled)
+        const [issuedResponse, discountedResponse] = await Promise.all([
+          fetch('/api/ptt-requests?status=issued&importerBank=DBS Bank'),
+          fetch('/api/ptt-requests?status=discounted&importerBank=DBS Bank')
+        ]);
+
+        const issuedData = await issuedResponse.json();
+        const discountedData = await discountedResponse.json();
+
+        const allPTTs = [
+          ...(issuedData.requests || []),
+          ...(discountedData.requests || [])
+        ];
+
+        setIssuedPTTs(allPTTs);
       } catch (error) {
-        console.error('Error fetching issued PTTs:', error);
+        console.error('Error fetching outstanding PTTs:', error);
       }
       setLoading(false);
     };
@@ -51,6 +63,7 @@ export default function OutstandingPTTsPage() {
     const maturityDate = new Date(ptt.maturity_date);
     return maturityDate > new Date();
   }).length;
+  const discountedPTTs = issuedPTTs.filter(ptt => ptt.status === 'discounted').length;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -86,19 +99,20 @@ export default function OutstandingPTTsPage() {
         <StatCard
           title="Total Outstanding"
           value={totalOutstanding}
+          subtitle="Issued + Discounted"
           color="blue"
         />
         <StatCard
-          title="Active"
-          value={activePTTs}
-          subtitle="Not yet matured"
-          color="green"
+          title="Discounted"
+          value={discountedPTTs}
+          subtitle="Purchased by funder"
+          color="orange"
         />
         <StatCard
           title="Matured"
           value={totalOutstanding - activePTTs}
           subtitle="Awaiting settlement"
-          color="orange"
+          color="red"
         />
         <StatCard
           title="Total Exposure"
