@@ -12,7 +12,7 @@ export default function LandingPage() {
               <span className="block text-orange-600 mt-2">Digital PTT Platform</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Revolutionize working capital for exporters through Post-Dated Transfer of Title (PTT)
+              Revolutionize working capital for exporters through Programmable Trade Token (PTT)
               discounting with instant liquidity and seamless bank-funder collaboration
             </p>
             <div className="flex gap-4 justify-center">
@@ -474,7 +474,7 @@ export default function LandingPage() {
             <div>
               <h3 className="text-white font-bold text-lg mb-4">PTT Platform</h3>
               <p className="text-sm">
-                Digital platform for Post-Dated Transfer of Title discounting and trade finance.
+                Digital platform for Programmable Trade Token discounting and trade finance.
               </p>
             </div>
             <div>

@@ -1,10 +1,10 @@
 # ICICI Trade Finance Platform
 
-A modern trade finance platform built with Next.js 16, enabling seamless financial transactions between exporters, importers, and banking institutions with maker-checker workflow.
+A modern trade finance platform built with Next.js 16, enabling seamless financial transactions between exporters, importers, and banking institutions through Programmable Trade Tokens (PTTs) with maker-checker workflow.
 
 ## Overview
 
-The ICICI Trade Finance Platform facilitates trade finance operations with a comprehensive role-based access system for exporters, importers, and two funder entities (Gift IBU Funder and DBS Bank). The platform implements maker-checker controls for enhanced security and compliance.
+The ICICI Trade Finance Platform facilitates trade finance operations using Programmable Trade Tokens (PTTs) - digitized trade instruments that enable instant liquidity and automated workflows. The platform features a comprehensive role-based access system for exporters, importers, and two funder entities (Gift IBU Funder and DBS Bank), with maker-checker controls for enhanced security and compliance.
 
 ## Entities & Roles
 
@@ -31,7 +31,7 @@ The ICICI Trade Finance Platform facilitates trade finance operations with a com
 ### Bank Dashboards
 - **DBS Bank Dashboard** (Orange theme)
   - Treasury balance tracking
-  - PTT (Payment Transfer Token) management
+  - PTT (Programmable Trade Token) management
   - Pending requests and approvals
   - Settlement tracking
   - Document management
