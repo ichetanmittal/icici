@@ -33,6 +33,7 @@ export default function ExporterDocumentsPage() {
   const [selectedPTT, setSelectedPTT] = useState<PTTRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([
     { type: 'Commercial Invoice', name: '', file: null, url: '' },
     { type: 'Bill of Lading', name: '', file: null, url: '' },
@@ -80,20 +81,64 @@ export default function ExporterDocumentsPage() {
     loadTransferredPTTs();
   }, [router, pttIdFromQuery]);
 
-  const handleFileChange = (index: number, file: File | null) => {
+  const handleFileChange = async (index: number, file: File | null) => {
     const newDocuments = [...documents];
     if (file) {
       newDocuments[index].file = file;
       newDocuments[index].name = file.name;
-      // In a real implementation, you would upload to Supabase Storage here
-      // For now, we'll create a mock URL
-      newDocuments[index].url = `https://storage.example.com/documents/${Date.now()}_${file.name}`;
+      setDocuments(newDocuments);
+
+      // Upload file to Supabase Storage
+      setUploadingFile(true);
+      try {
+        const supabase = createClient();
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `ptt-documents/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          alert('Failed to upload file: ' + uploadError.message);
+          // Reset the document
+          newDocuments[index].file = null;
+          newDocuments[index].name = '';
+          newDocuments[index].url = '';
+          setDocuments(newDocuments);
+          setUploadingFile(false);
+          return;
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+
+        newDocuments[index].url = publicUrl;
+        setDocuments(newDocuments);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        alert('Failed to upload file');
+        // Reset the document
+        newDocuments[index].file = null;
+        newDocuments[index].name = '';
+        newDocuments[index].url = '';
+        setDocuments(newDocuments);
+      } finally {
+        setUploadingFile(false);
+      }
     } else {
       newDocuments[index].file = null;
       newDocuments[index].name = '';
       newDocuments[index].url = '';
+      setDocuments(newDocuments);
     }
-    setDocuments(newDocuments);
   };
 
   const addDocument = () => {
@@ -286,14 +331,25 @@ export default function ExporterDocumentsPage() {
                             type="file"
                             accept=".pdf,.jpg,.jpeg,.png"
                             onChange={(e) => handleFileChange(index, e.target.files?.[0] || null)}
+                            disabled={uploadingFile}
                             className="block w-full text-sm text-gray-500
                               file:mr-4 file:py-2 file:px-4
                               file:rounded-lg file:border-0
                               file:text-sm file:font-semibold
                               file:bg-orange-50 file:text-orange-700
                               hover:file:bg-orange-100
-                              cursor-pointer"
+                              cursor-pointer
+                              disabled:opacity-50 disabled:cursor-not-allowed"
                           />
+                          {uploadingFile && (
+                            <p className="mt-2 text-xs text-blue-600 flex items-center">
+                              <svg className="animate-spin h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Uploading...
+                            </p>
+                          )}
                           {doc.name && (
                             <p className="mt-2 text-xs text-green-600 flex items-center">
                               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
