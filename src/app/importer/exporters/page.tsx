@@ -79,7 +79,6 @@ export default function MyExporters() {
     <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">My Exporters</h1>
-        <p className="text-gray-600">Exporters you've sent PTT requests to</p>
       </div>
 
       {exporters.length === 0 ? (
